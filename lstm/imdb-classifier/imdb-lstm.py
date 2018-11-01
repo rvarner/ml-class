@@ -37,6 +37,8 @@ model = Sequential()
 model.add(Embedding(config.vocab_size,
                     config.embedding_dims,
                     input_length=config.maxlen))
+model.add(LSTM(config.hidden_dims,activation="sigmoid", return_sequences=True))
+model.add(LSTM(config.hidden_dims,activation="sigmoid"))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(loss='binary_crossentropy',
               optimizer='rmsprop',
