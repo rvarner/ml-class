@@ -1,4 +1,4 @@
 [default]
 entity: mlclass
-project: digits-oct31
+project: sign-nov1
 base_url: https://api.wandb.ai
