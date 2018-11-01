@@ -1,7 +1,9 @@
 from keras.datasets import mnist
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Dropout, Dense, Flatten
+from keras.layers import Conv2D, MaxPooling2D, Dropout, Dense, Flatten, ZeroPadding2D
+from keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from keras.utils import np_utils
+from keras.optimizers import Adam
 from wandb.keras import WandbCallback
 import wandb
 
@@ -14,7 +16,7 @@ config.dropout = 0.2
 config.dense_layer_size = 128
 config.img_width = 28
 config.img_height = 28
-config.epochs = 10
+config.epochs = 50
 
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
@@ -35,19 +37,31 @@ labels=range(10)
 
 # build model
 model = Sequential()
-model.add(Conv2D(32,
+model.add(Conv2D(64,
     (config.first_layer_conv_width, config.first_layer_conv_height),
+                 padding='same',
     input_shape=(28, 28,1),
     activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(config.dropout))
+model.add(Conv2D(32,
+    (config.first_layer_conv_width, config.first_layer_conv_height),
+                 padding='same',
+    activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(config.dropout))
 model.add(Flatten())
 model.add(Dense(config.dense_layer_size, activation='relu'))
+model.add(Dropout(config.dropout))
 model.add(Dense(num_classes, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer='adam',
                 metrics=['accuracy'])
 
+earlystopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=1, mode='auto', baseline=None, restore_best_weights=True)
+
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=2, verbose=1, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0.0001)
 
 model.fit(X_train, y_train, validation_data=(X_test, y_test),
         epochs=config.epochs,
-        callbacks=[WandbCallback(data_type="image", save_model=False)])
+        callbacks=[WandbCallback(data_type="image", save_model=False),reduce_lr,earlystopping])

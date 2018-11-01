@@ -2,6 +2,7 @@ from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Flatten, Dropout
 from keras.utils import np_utils
+from keras.callbacks import ReduceLROnPlateau
 
 import wandb
 from wandb.keras import WandbCallback
@@ -30,11 +31,16 @@ num_classes = y_train.shape[1]
 # create model
 model = Sequential()
 model.add(Flatten(input_shape=(img_width, img_height)))
-model.add(Dense(num_classes))
-model.compile(loss='mse', optimizer='adam',
+model.add(Dense(num_classes*8,activation='relu'))
+model.add(Dense(num_classes*4,activation='relu'))
+model.add(Dense(num_classes*2,activation='relu'))
+model.add(Dense(num_classes,activation='softmax'))
+model.compile(loss='categorical_crossentropy', optimizer='adam',
               metrics=['accuracy'])
 
+reduce = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                              patience=5, min_lr=0.001)
 # Fit the model
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test),
-          callbacks=[WandbCallback(data_type="image", labels=labels, save_model=False)])
+model.fit(X_train, y_train, epochs=15, validation_data=(X_test, y_test),
+          callbacks=[reduce,WandbCallback(data_type="image", labels=labels, save_model=False)])
 model.save('model.h5')
