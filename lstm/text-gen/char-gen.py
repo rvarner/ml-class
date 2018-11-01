@@ -25,6 +25,9 @@ config.file = args.text
 config.maxlen = 200
 config.step = 3
 
+# Shakespeare's works
+# https://ocw.mit.edu/ans7870/6/6.006/s08/lecturenotes/files/t8.shakespeare.txt
+
 text = io.open(config.file, encoding='utf-8').read()
 chars = sorted(list(set(text)))
 

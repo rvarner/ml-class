@@ -65,7 +65,7 @@ model.add(Conv2D(64,
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.2))
 model.add(Flatten(input_shape=(img_width, img_height)))
-model.add(Dense(128, activation='relu'))
+model.add(Dense(64, activation='relu'))
 model.add(Dropout(0.2))
 model.add(Dense(num_classes, activation='softmax'))
 model.compile(loss=config.loss, optimizer=config.optimizer,
