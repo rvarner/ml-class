@@ -2,7 +2,7 @@ from keras.preprocessing import sequence
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers import Embedding, LSTM
-from keras.layers import Conv1D, Flatten
+from keras.layers import Conv1D, Flatten, MaxPooling1D
 from keras.datasets import imdb
 import wandb
 from wandb.keras import WandbCallback
@@ -18,9 +18,9 @@ config.vocab_size = 1000
 config.maxlen = 1000
 config.batch_size = 32
 config.embedding_dims = 50
-config.filters = 250
+config.filters = 128 #250
 config.kernel_size = 3
-config.hidden_dims = 250
+config.hidden_dims = 100
 config.epochs = 10
 
 (X_train, y_train), (X_test, y_test) = imdb.load_imdb()
@@ -46,7 +46,14 @@ model.add(Conv1D(config.filters,
                  config.kernel_size,
                  padding='valid',
                  activation='relu'))
-model.add(Flatten())
+model.add(MaxPooling1D(2))
+model.add(Conv1D(config.filters,
+                 config.kernel_size,
+                 padding='valid',
+                 activation='relu'))
+model.add(MaxPooling1D(pool_size=2))
+model.add(LSTM(5,activation="sigmoid"))
+#model.add(Flatten())
 model.add(Dense(config.hidden_dims, activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(1, activation='sigmoid'))
