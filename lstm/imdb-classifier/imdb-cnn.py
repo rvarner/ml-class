@@ -47,13 +47,14 @@ model.add(Conv1D(config.filters,
                  padding='valid',
                  activation='relu'))
 model.add(MaxPooling1D(2))
+model.add(Dropout(0.5))
 model.add(Conv1D(config.filters,
                  config.kernel_size,
                  padding='valid',
                  activation='relu'))
 model.add(MaxPooling1D(pool_size=2))
-model.add(LSTM(5,activation="sigmoid"))
-#model.add(Flatten())
+#model.add(LSTM(5,activation="sigmoid"))
+model.add(Flatten())
 model.add(Dense(config.hidden_dims, activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(1, activation='sigmoid'))

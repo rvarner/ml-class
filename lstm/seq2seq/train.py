@@ -1,7 +1,7 @@
 # adapted from https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 
 from keras.models import Sequential
-from keras.layers import LSTM, TimeDistributed, RepeatVector, Dense
+from keras.layers import LSTM, TimeDistributed, RepeatVector, Dense, GRU, Dropout, Bidirectional
 import numpy as np
 import wandb
 from wandb.keras import WandbCallback
@@ -101,14 +101,14 @@ split_at = len(x) - len(x) // 10
 (y_train, y_val) = y[:split_at], y[split_at:]
 
 model = Sequential()
-model.add(LSTM(config.hidden_size, input_shape=(maxlen, len(chars))))
+model.add(Bidirectional(GRU(config.hidden_size, input_shape=(maxlen, len(chars)),dropout=0.2)))
 model.add(RepeatVector(config.digits + 1))
-model.add(LSTM(config.hidden_size, return_sequences=True))
+model.add(Bidirectional(GRU(config.hidden_size, return_sequences=True)))
 model.add(TimeDistributed(Dense(len(chars), activation='softmax')))
 model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
+              optimizer='rmsprop',
               metrics=['accuracy'])
-model.summary()
+#model.summary()
 
 # Train the model each generation and show predictions against the validation
 # dataset.
