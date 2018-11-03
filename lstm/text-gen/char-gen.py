@@ -8,44 +8,43 @@ import numpy as np
 import random
 import sys
 import io
-import wandb
-from wandb.keras import WandbCallback
 import argparse
+from keras.callbacks import ModelCheckpoint
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("text", type=str)
 
 args = parser.parse_args()
 
-run = wandb.init()
-config = run.config
-config.hidden_nodes = 128
-config.batch_size = 256
-config.file = args.text
-config.maxlen = 200
-config.step = 3
+hidden_nodes = 128
+batch_size = 256
+file = args.text
+maxlen = 200
+step = 3
+epochs = 100
 
 # Shakespeare's works
 # https://ocw.mit.edu/ans7870/6/6.006/s08/lecturenotes/files/t8.shakespeare.txt
 
-text = io.open(config.file, encoding='utf-8').read()
+text = io.open(file, encoding='utf-8').read()
 chars = sorted(list(set(text)))
 
 char_indices = dict((c, i) for i, c in enumerate(chars))
 indices_char = dict((i, c) for i, c in enumerate(chars))
 
-# build a sequence for every <config.step>-th character in the text
+# build a sequence for every <step>-th character in the text
 
 sentences = []
 next_chars = []
-for i in range(0, len(text) - config.maxlen, config.step):
-    sentences.append(text[i: i + config.maxlen])
-    next_chars.append(text[i + config.maxlen])
+for i in range(0, len(text) - maxlen, step):
+    sentences.append(text[i: i + maxlen])
+    next_chars.append(text[i + maxlen])
 
 # build up one-hot encoded input x and output y where x is a character
 # in the text y is the next character in the text
 
-x = np.zeros((len(sentences), config.maxlen, len(chars)), dtype=np.bool)
+x = np.zeros((len(sentences), maxlen, len(chars)), dtype=np.bool)
 y = np.zeros((len(sentences), len(chars)), dtype=np.bool)
 for i, sentence in enumerate(sentences):
     for t, char in enumerate(sentence):
@@ -53,7 +52,7 @@ for i, sentence in enumerate(sentences):
     y[i, char_indices[next_chars[i]]] = 1
 
 model = Sequential()
-model.add(GRU(128, input_shape=(config.maxlen, len(chars))))
+model.add(GRU(128, input_shape=(maxlen, len(chars))))
 model.add(Dense(len(chars), activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer="rmsprop")
 
@@ -69,20 +68,20 @@ def sample(preds, temperature=1.0):
 
 class SampleText(keras.callbacks.Callback):
     def on_epoch_end(self, batch, logs={}):
-        start_index = random.randint(0, len(text) - config.maxlen - 1)
+        start_index = random.randint(0, len(text) - maxlen - 1)
 
         for diversity in [0.5, 1.2]:
             print()
             print('----- diversity:', diversity)
 
             generated = ''
-            sentence = text[start_index: start_index + config.maxlen]
+            sentence = text[start_index: start_index + maxlen]
             generated += sentence
             print('----- Generating with seed: "' + sentence + '"')
             sys.stdout.write(generated)
 
             for i in range(200):
-                x_pred = np.zeros((1, config.maxlen, len(chars)))
+                x_pred = np.zeros((1, maxlen, len(chars)))
                 for t, char in enumerate(sentence):
                     x_pred[0, t, char_indices[char]] = 1.
 
@@ -97,5 +96,9 @@ class SampleText(keras.callbacks.Callback):
                 sys.stdout.flush()
             print()
             
-model.fit(x, y, batch_size=config.batch_size,
-              epochs=100, callbacks=[SampleText(), WandbCallback()])
+checkpoint = ModelCheckpoint("checkythecheckpoint.hd5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+
+model.fit(x, y, batch_size=batch_size,
+              epochs=epochs, callbacks=[SampleText(),checkpoint])
+
+model.save('shakespeare.hdf5')

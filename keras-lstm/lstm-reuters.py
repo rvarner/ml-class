@@ -42,13 +42,12 @@ lemmatizer = WordNetLemmatizer()
 newsline_documents = []
 
 def tokenize(document):
- words = []
+    words = []
 
- for sentence in sent_tokenize(document):
-     tokens = [lemmatizer.lemmatize(t.lower()) for t in tokenizer.tokenize(sentence) if t.lower() not in stop_words]
-     words += tokens
-
- return words
+    for sentence in sent_tokenize(document):
+        tokens = [lemmatizer.lemmatize(t.lower()) for t in tokenizer.tokenize(sentence) if t.lower() not in stop_words]
+        words += tokens
+    return words
 
 # Create new Gensim Word2Vec model
 w2v_model = Word2Vec(newsline_documents, size=num_features, min_count=1, window=10, workers=cpu_count())

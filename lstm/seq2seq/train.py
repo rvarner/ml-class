@@ -3,11 +3,7 @@
 from keras.models import Sequential
 from keras.layers import LSTM, TimeDistributed, RepeatVector, Dense, GRU, Dropout, Bidirectional
 import numpy as np
-import wandb
-from wandb.keras import WandbCallback
 
-wandb.init()
-config = wandb.config
 
 class CharacterTable(object):
     """Given a set of characters:
@@ -41,14 +37,14 @@ class CharacterTable(object):
         return ''.join(self.indices_char[x] for x in x)
 
 # Parameters for the model and dataset.
-config.training_size = 50000
-config.digits = 5
-config.hidden_size = 128
-config.batch_size = 128
+training_size = 50000
+digits = 5
+hidden_size = 128
+batch_size = 128
 
 # Maximum length of input is 'int + int' (e.g., '345+678'). Maximum length of
 # int is DIGITS.
-maxlen = config.digits + 1 + config.digits
+maxlen = digits + 1 + digits
 
 # All the numbers, plus sign and space for padding.
 chars = '0123456789+- '
@@ -58,9 +54,9 @@ questions = []
 expected = []
 seen = set()
 print('Generating data...')
-while len(questions) < config.training_size:
+while len(questions) < training_size:
     f = lambda: int(''.join(np.random.choice(list('0123456789'))
-                    for i in range(np.random.randint(1, config.digits + 1))))
+                    for i in range(np.random.randint(1, digits + 1))))
     a, b = f(), f()
     # Skip any addition questions we've already seen
     # Also skip any such that x+Y == Y+x (hence the sorting).
@@ -73,7 +69,7 @@ while len(questions) < config.training_size:
     query = q + ' ' * (maxlen - len(q))
     ans = str(a - b)
     # Answers can be of maximum size DIGITS + 1.
-    ans += ' ' * (config.digits + 1 - len(ans))
+    ans += ' ' * (digits + 1 - len(ans))
 
     questions.append(query)
     expected.append(ans)
@@ -82,11 +78,11 @@ print('Total addition questions:', len(questions))
 
 print('Vectorization...')
 x = np.zeros((len(questions), maxlen, len(chars)), dtype=np.bool)
-y = np.zeros((len(questions), config.digits + 1, len(chars)), dtype=np.bool)
+y = np.zeros((len(questions), digits + 1, len(chars)), dtype=np.bool)
 for i, sentence in enumerate(questions):
     x[i] = ctable.encode(sentence, maxlen)
 for i, sentence in enumerate(expected):
-    y[i] = ctable.encode(sentence, config.digits + 1)
+    y[i] = ctable.encode(sentence, digits + 1)
 
 # Shuffle (x, y) in unison as the later parts of x will almost all be larger
 # digits.
@@ -101,9 +97,9 @@ split_at = len(x) - len(x) // 10
 (y_train, y_val) = y[:split_at], y[split_at:]
 
 model = Sequential()
-model.add(Bidirectional(GRU(config.hidden_size, input_shape=(maxlen, len(chars)),dropout=0.2)))
-model.add(RepeatVector(config.digits + 1))
-model.add(Bidirectional(GRU(config.hidden_size, return_sequences=True)))
+model.add(Bidirectional(GRU(hidden_size, input_shape=(maxlen, len(chars)),dropout=0.2)))
+model.add(RepeatVector(digits + 1))
+model.add(Bidirectional(GRU(hidden_size, return_sequences=True)))
 model.add(TimeDistributed(Dense(len(chars), activation='softmax')))
 model.compile(loss='categorical_crossentropy',
               optimizer='rmsprop',
@@ -117,9 +113,9 @@ for iteration in range(1, 200):
     print('-' * 50)
     print('Iteration', iteration)
     model.fit(x_train, y_train,
-              batch_size=config.batch_size,
+              batch_size=batch_size,
               epochs=1,
-              validation_data=(x_val, y_val),callbacks=[WandbCallback()])
+              validation_data=(x_val, y_val),callbacks=[])
     # Select 10 samples from the validation set at random so we can visualize
     # errors.
     for i in range(10):
@@ -132,7 +128,7 @@ for iteration in range(1, 200):
         print('Q', q, end=' ')
         print('T', correct, end=' ')
         if correct == guess:
-            print('☑', end=' ')
+            print('Y', end=' ')
         else:
-            print('☒', end=' ')
+            print('N', end=' ')
         print(guess)

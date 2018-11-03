@@ -13,12 +13,9 @@ from keras import backend as K
 from keras import initializers
 from PIL import Image
 from keras.callbacks import LambdaCallback
-import wandb
 
 # Find more tricks here: https://github.com/soumith/ganhacks
 
-run = wandb.init()
-config = wandb.config
 
 # The results are a little better when the dimensionality of the random vector is only 10.
 # The dimensionality has been left at 100 for consistency with other GAN implementations.
@@ -29,13 +26,13 @@ randomDim = 10
 X_train = (X_train.astype(np.float32) - 127.5)/127.5
 X_train = X_train.reshape(60000, 784)
 
-config.lr=0.0002
-config.beta_1=0.5
-config.batch_size=128
-config.epochs=10
+lr=0.0002
+beta_1=0.5
+batch_size=128
+epochs=10
 
 # Optimizer
-adam = Adam(config.lr, beta_1=config.beta_1)
+adam = Adam(lr, beta_1=beta_1)
 
 generator = Sequential()
 generator.add(Dense(256, input_dim=randomDim, kernel_initializer=initializers.RandomNormal(stddev=0.02)))
@@ -107,8 +104,8 @@ def log_discriminator(epoch, logs):
             'discriminator_loss': logs['loss'],
             'discriminator_acc': logs['binary_accuracy']})
 
-def train(epochs=config.epochs, batchSize=config.batch_size):
-    batchCount = int(X_train.shape[0] / config.batch_size)
+def train(epochs=epochs, batchSize=batch_size):
+    batchCount = int(X_train.shape[0] / batch_size)
     print('Epochs:', epochs)
     print('Batch size:', batchSize)
     print('Batches per epoch:', batchCount)
