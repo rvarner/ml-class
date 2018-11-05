@@ -26,7 +26,7 @@ def create_run_log_dir(run_name=None, log_dir='/notebooks/tf_logs'):
 first_layer_convs = 32
 first_layer_conv_width = 3
 first_layer_conv_height = 3
-dropout = 0.4
+dropout = 0.5
 dense_layer_size = 128
 filter_count = 128
 img_width = 28
@@ -60,25 +60,48 @@ model.add(Conv2D(filter_count,
                  padding='same',
                  input_shape=(28, 28,1),
     activation='relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(dropout))
 model.add(Conv2D(filter_count,
                  (first_layer_conv_width, first_layer_conv_height),
                  padding='same',
                  activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(dropout))
+#model.add(Dropout(dropout))
+model.add(Conv2D(filter_count,
+                 (first_layer_conv_width, first_layer_conv_height),
+                 padding='same',
+                 activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(filter_count,
+                 (first_layer_conv_width, first_layer_conv_height),
+                 padding='same',
+                 activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+#model.add(Dropout(dropout))
 model.add(Flatten())
-model.add(Dense(dense_layer_size, activation='relu'))
-model.add(Dropout(dropout))
+model.add(Dense(256, activation='relu'))
+model.add(Dense(64, activation='relu'))
+#model.add(Dropout(dropout))
 model.add(Dense(num_classes, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer='adam',
                 metrics=['accuracy'])
 
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1, mode='auto', min_delta=0.0001, cooldown=0, min_lr=0.00001)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', 
+                              factor=0.1, 
+                              patience=3, 
+                              verbose=1, 
+                              mode='auto', 
+                              min_delta=0.0001, 
+                              cooldown=0, 
+                              min_lr=0.00001)
 
-earlystopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1, mode='auto', baseline=None, restore_best_weights=True)
+earlystopping = EarlyStopping(monitor='val_loss', 
+                              min_delta=0, 
+                              patience=10, 
+                              verbose=1, 
+                              mode='auto', 
+                              baseline=None, 
+                              restore_best_weights=True)
 
 model.fit(X_train,
           y_train, 
@@ -87,5 +110,5 @@ model.fit(X_train,
           callbacks=[
               reduce_lr,
               earlystopping,
-              TensorBoard(log_dir=create_run_log_dir('1c%d-fashion' % filter_count))])
+              TensorBoard(log_dir=create_run_log_dir('2xccmp%d-256-64-fashion' % (filter_count)))])
 
